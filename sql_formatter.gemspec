@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Kotaro Mochizuki"]
   spec.email         = ["mochizuki@basicinc.jp"]
 
-  spec.summary       = %q{ Write a short summary, because Rubygems requires one.}
+  spec.summary       = %q{ SQL formatter on Ruby }
   spec.description   = %q{ Write a longer description or delete this line.}
   spec.homepage      = "https://github.com/mochizukikotaro"
   spec.license       = "MIT"
