@@ -2,6 +2,7 @@ module SqlFormatter
   class Formatter
 
     NEWLINE = "\n"
+    SPACE = " "
 
     RESERVED_TOPLEVEL = [
       'select',
@@ -19,26 +20,55 @@ module SqlFormatter
     def initialize(string)
       @ss = StringScanner.new(string)
       @tokens = []
-
-      @newline = "\n"
+      @newline = false
+      @inline_parentheses = false
       @tab = "  "
       @indent_level = 0
+      tokenize
+      remove_space
     end
 
-    def tokens
-      tokenize
-      @tokens
-    end
 
     def format
       output = ''
-      binding.pry
-      @tokens.each do |token|
-        if RESERVED_TOPLEVEL.include?(token)
-          output += NEWLINE + @tab * @indent_level
+      @tokens.each_with_index do |token, i|
+        case
+
+        when  RESERVED_TOPLEVEL.include?(token)
+          output += NEWLINE if i > 0                 # head line dont need NEWLINE
+          output += @tab * @indent_level
+          @newline = true
+
+        when token == ';' && i == (@tokens.size - 1) # end of tokens
+          output += NEWLINE
+
+        when token == ','                            # comma
+
+        when token == '('
+          if RESERVED_TOPLEVEL.include?(@tokens[i + 1]) # not inline
+            @newline = true
+            output += SPACE
+          else                          # inline
+            @newline = false
+            @inline_parentheses = true
+          end
+
+        when token == ')'
+          if @inline_parentheses        # inline
+            @inline_parentheses = false
+          else                          # not inline
+            output += NEWLINE + @tab
+          end
+
         else
-          output += NEWLINE + @tab
+          if @inline_parentheses
+          elsif @newline
+            output += NEWLINE + @tab
+          else
+            output += SPACE
+          end
         end
+
         output += token
       end
       output
@@ -60,14 +90,16 @@ module SqlFormatter
           @ss.matched
         when @ss.scan(REGEX_RESERVED_TOPLEVEL)
           @ss.matched
-        when @ss.scan(/\;/)
-          @ss.matched
         when @ss.scan(REGEX_BOUNDARY)
           @ss.matched
         when @ss.scan(/\w+/)
           @ss.matched
         else
         end
+      end
+
+      def remove_space
+        @tokens.select! { |token| !token.match(/^\s+$/) }
       end
 
   end
