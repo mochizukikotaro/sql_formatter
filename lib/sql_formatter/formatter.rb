@@ -2,7 +2,8 @@ module SqlFormatter
   class Formatter
 
     NEWLINE = "\n"
-    SPACE = " "
+    SPACE   = " " * 1
+    TAB     = " " * 2
 
     RESERVED_TOPLEVEL = [
       'select',
@@ -18,11 +19,11 @@ module SqlFormatter
 
 
     def initialize(string)
-      @ss = StringScanner.new(string)
-      @tokens = []
-      @newline = false
+      @ss       = StringScanner.new(string)
+      @tokens   = []
+      @newline  = false
+      @space    = false
       @inline_parentheses = false
-      @tab = "  "
       @indent_level = 0
       tokenize
       remove_space
@@ -36,13 +37,14 @@ module SqlFormatter
 
         when  RESERVED_TOPLEVEL.include?(token)
           output += NEWLINE if i > 0                 # head line dont need NEWLINE
-          output += @tab * @indent_level
+          output += TAB * @indent_level
           @newline = true
 
         when token == ';' && i == (@tokens.size - 1) # end of tokens
           output += NEWLINE
 
-        when token == ','                            # comma
+        when token == ','               # comma
+          @space = true
 
         when token == '('
           if RESERVED_TOPLEVEL.include?(@tokens[i + 1]) # not inline
@@ -57,15 +59,20 @@ module SqlFormatter
           if @inline_parentheses        # inline
             @inline_parentheses = false
           else                          # not inline
-            output += NEWLINE + @tab
+            output += NEWLINE + TAB
           end
 
         else
           if @inline_parentheses
+            # Nothing to do
           elsif @newline
-            output += NEWLINE + @tab
-          else
+            output += NEWLINE + TAB
+            @newline = false
+          elsif @space
             output += SPACE
+            @space = false
+          else
+            # Nothing to do
           end
         end
 
@@ -91,6 +98,8 @@ module SqlFormatter
         when @ss.scan(REGEX_RESERVED_TOPLEVEL)
           @ss.matched
         when @ss.scan(REGEX_BOUNDARY)
+          @ss.matched
+        when @ss.scan(/(^'.*?'|^".*?"|^`.*?`)/)
           @ss.matched
         when @ss.scan(/\w+/)
           @ss.matched
