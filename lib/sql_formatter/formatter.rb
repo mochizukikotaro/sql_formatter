@@ -35,6 +35,7 @@ module SqlFormatter
     def format
       output = ''
       @tokens.each_with_index do |token, index|
+
         case
 
         # Reserved toplevel
@@ -57,10 +58,10 @@ module SqlFormatter
           output += NEWLINE
 
         # Comma
-      when token == COMMA
+        when token == COMMA
           @space = true
 
-        # Start parenthesis
+        # Left parenthesis
         when token == '('
           if @newline
             output += NEWLINE + TAB * @indent_level
@@ -78,7 +79,7 @@ module SqlFormatter
             output += SPACE
           end
 
-        # End parenthesis
+        # Right parenthesis
         when token == ')'
           if inline_right_parenthesis?
             @inline_parentheses_level = [0, @inline_parentheses_level - 1].max
@@ -120,13 +121,10 @@ module SqlFormatter
         @indent_level = [0, @indent_level -1].max
       end
 
-      # TODO: It can not handle multiple parentheses...
-      # ex) select ((1)) from users;
       def inline_left_parenthesis?(index)
         RESERVED_TOPLEVEL.include?(@tokens[index + 1]) ? false : true
       end
 
-      # TODO: It can not handle multiple parentheses...
       def inline_right_parenthesis?
         @inline_parentheses ? true : false
       end
@@ -148,8 +146,8 @@ module SqlFormatter
         patterns.each do |pattern|
           return @ss.matched if @ss.scan(pattern)
         end
-        # TODO: エラーハンドリングしたい
-        # ひとまずやっつけ対応。ループに入らないように処理をとめる。
+
+        # TODO: Add error handling
         p 'Warning'
         p @ss.peek 20
         @ss.pos += 1
