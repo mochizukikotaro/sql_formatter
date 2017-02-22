@@ -17,7 +17,4 @@ insert into users (name, team) values
 ;
 
 -- Sample query
-puts SqlFormatter.format <<EOF
-select (1), ((2)), hoge, piyo, count(*), max(score)
-from users where name in (select *, aa from hoge) and team = '3' group by team order by id;
-EOF
+puts SqlFormatter.format "select (1), ((2)), hoge, piyo, count(*), max(score) from users where name in (select *, aa from hoge) and team = '3' group by team order by id;"
