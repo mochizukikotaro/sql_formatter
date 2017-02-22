@@ -11,13 +11,13 @@ gem install sql_formatter
 ## Usage
 
 ```
-[1] pry(main)> require 'sql_formatter'
+require 'sql_formatter'
 => true
 
-[2] pry(main)> sql_string = "select col1, col2 from table1 where col3 in (select col3 from table2) order by col1;"
+sql_string = "select col1, col2 from table1 where col3 in (select col3 from table2) order by col1;"
 => "select col1, col2 from table1 where col3 in (select col3 from table2) order by col1;"
 
-[3] pry(main)> puts SqlFormatter.format(sql_string)
+puts SqlFormatter.format(sql_string)
 select
   col1, col2
 from
@@ -36,12 +36,25 @@ order by
 
 ## Development
 
-
+```
+$ git clone git@github.com:mochizukikotaro/sql_formatter.git
+$ cd sql_formatter
+$ bundle exec irb
+irb(main):001:0> require 'sql_formatter'
+=> true
+irb(main):002:0> puts SqlFormatter.format('select * from table;')
+select
+  *
+from
+  table
+;
+=> nil
+```
 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/Kotaro Mochizuki/sql_formatter.
+Bug reports and pull requests are welcome on GitHub at https://github.com/mochizukikotaro/sql_formatter.
 
 
 ## License
