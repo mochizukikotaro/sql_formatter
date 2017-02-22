@@ -22,7 +22,7 @@ module SqlFormatter
       @ss       = StringScanner.new(string)
       @tokens   = []
       @newline  = false
-      @space    = false
+      @space    = true
       @inline_parentheses = false
       @indent_level = 0
       tokenize
@@ -32,33 +32,41 @@ module SqlFormatter
 
     def format
       output = ''
-      @tokens.each_with_index do |token, i|
+      @tokens.each_with_index do |token, index|
         case
 
+        # Reserved toplevel
         when  RESERVED_TOPLEVEL.include?(token)
-          output += NEWLINE if i > 0                 # head line dont need NEWLINE
+          lower_indent_level
+          output += NEWLINE if index > 0
           output += TAB * @indent_level
           @newline = true
+          raise_indent_level
 
-        when token == ';' && i == (@tokens.size - 1) # end of tokens
+        # End of tokens
+        when token == ';' && index == (@tokens.size - 1)
           output += NEWLINE
 
-        when token == ','               # comma
+        # Comma
+        when token == ','
           @space = true
 
+        # Start parenthesis
         when token == '('
-          if RESERVED_TOPLEVEL.include?(@tokens[i + 1]) # not inline
-            @newline = true
-            output += SPACE
-          else                          # inline
+          if inline_start_parenthesis?(index)
             @newline = false
+            @space = false
             @inline_parentheses = true
+          else
+            @newline = true
           end
 
+        # End parenthesis
         when token == ')'
-          if @inline_parentheses        # inline
+          if inline_end_parenthesis?
             @inline_parentheses = false
-          else                          # not inline
+            @space = true
+          else
             output += NEWLINE + TAB
           end
 
@@ -70,7 +78,6 @@ module SqlFormatter
             @newline = false
           elsif @space
             output += SPACE
-            @space = false
           else
             # Nothing to do
           end
@@ -83,28 +90,47 @@ module SqlFormatter
 
     private
 
-      # Create token
+      def raise_indent_level
+        @indent_level += 1
+      end
+
+      def lower_indent_level
+        @indent_level = [0, @indent_level -1].max
+      end
+
+      # TODO: ひとまず、インラインカッコは2重にならない前提ですすめる....
+      def inline_start_parenthesis?(index)
+        RESERVED_TOPLEVEL.include?(@tokens[index + 1]) ? false : true
+      end
+
+      # TODO: ひとまず、インラインカッコは2重にならない前提ですすめる....
+      def inline_end_parenthesis?
+        @inline_parentheses ? true : false
+      end
+
       def tokenize
         until @ss.eos?
           @tokens << next_token
-          # @ss.pos += 1 unless @ss.eos?
         end
       end
 
       def next_token
-        case
-        when @ss.scan(/\s+/)
-          @ss.matched
-        when @ss.scan(REGEX_RESERVED_TOPLEVEL)
-          @ss.matched
-        when @ss.scan(REGEX_BOUNDARY)
-          @ss.matched
-        when @ss.scan(/(^'.*?'|^".*?"|^`.*?`)/)
-          @ss.matched
-        when @ss.scan(/\w+/)
-          @ss.matched
-        else
+        patterns = [
+          /\s+/,
+          REGEX_RESERVED_TOPLEVEL,
+          REGEX_BOUNDARY,
+          /(^'.*?'|^".*?"|^`.*?`)/,
+          /\w+/
+        ]
+        patterns.each do |pattern|
+          return @ss.matched if @ss.scan(pattern)
         end
+        # TODO: エラーハンドリングしたい
+        # ひとまずやっつけ対応。ループに入らないように処理をとめる。
+        p 'Warning'
+        p @ss.peek 20
+        @ss.pos += 1
+        return nil
       end
 
       def remove_space
