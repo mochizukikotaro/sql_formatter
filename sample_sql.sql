@@ -15,3 +15,9 @@ insert into users (name, team) values
   ('aaaa', 3),
   ('bbbb', 3)
 ;
+
+-- Sample query
+puts SqlFormatter.format <<EOF
+select (1), ((2)), hoge, piyo, count(*), max(score)
+from users where name in (select *, aa from hoge) and team = '3' group by team order by id;
+EOF

@@ -4,6 +4,7 @@ module SqlFormatter
     NEWLINE = "\n"
     SPACE   = " " * 1
     TAB     = " " * 2
+    COMMA   = ","
 
     RESERVED_TOPLEVEL = [
       'select',
@@ -21,10 +22,11 @@ module SqlFormatter
     def initialize(string)
       @ss       = StringScanner.new(string)
       @tokens   = []
-      @newline  = false
       @space    = true
-      @inline_parentheses = false
+      @newline  = false
       @indent_level = 0
+      @inline_parentheses = false
+      @inline_parentheses_level = 0
       tokenize
       remove_space
     end
@@ -40,7 +42,14 @@ module SqlFormatter
           lower_indent_level
           output += NEWLINE if index > 0
           output += TAB * @indent_level
-          @newline = true
+
+          # TODO: Add optional..
+          if @indent_level >= 2
+            @newline = false
+          else
+            @newline = true
+          end
+
           raise_indent_level
 
         # End of tokens
@@ -48,25 +57,38 @@ module SqlFormatter
           output += NEWLINE
 
         # Comma
-        when token == ','
+      when token == COMMA
           @space = true
 
         # Start parenthesis
         when token == '('
-          if inline_start_parenthesis?(index)
+          if @newline
+            output += NEWLINE + TAB * @indent_level
+          end
+
+          if inline_left_parenthesis?(index)
             @newline = false
             @space = false
             @inline_parentheses = true
+            @inline_parentheses_level += 1
+            output += SPACE if @tokens[index - 1] == COMMA
           else
             @newline = true
+            @indent_level += 2
+            output += SPACE
           end
 
         # End parenthesis
         when token == ')'
-          if inline_end_parenthesis?
-            @inline_parentheses = false
-            @space = true
+          if inline_right_parenthesis?
+            @inline_parentheses_level = [0, @inline_parentheses_level - 1].max
+
+            if @inline_parentheses_level == 0
+              @inline_parentheses = false
+              @space = true
+            end
           else
+            @indent_level -= 2
             output += NEWLINE + TAB
           end
 
@@ -74,7 +96,7 @@ module SqlFormatter
           if @inline_parentheses
             # Nothing to do
           elsif @newline
-            output += NEWLINE + TAB
+            output += NEWLINE + TAB * @indent_level
             @newline = false
           elsif @space
             output += SPACE
@@ -98,13 +120,14 @@ module SqlFormatter
         @indent_level = [0, @indent_level -1].max
       end
 
-      # TODO: ひとまず、インラインカッコは2重にならない前提ですすめる....
-      def inline_start_parenthesis?(index)
+      # TODO: It can not handle multiple parentheses...
+      # ex) select ((1)) from users;
+      def inline_left_parenthesis?(index)
         RESERVED_TOPLEVEL.include?(@tokens[index + 1]) ? false : true
       end
 
-      # TODO: ひとまず、インラインカッコは2重にならない前提ですすめる....
-      def inline_end_parenthesis?
+      # TODO: It can not handle multiple parentheses...
+      def inline_right_parenthesis?
         @inline_parentheses ? true : false
       end
 
