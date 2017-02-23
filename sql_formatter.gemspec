@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{ SQL formatter on Ruby }
   spec.description   = %q{ Write a longer description or delete this line.}
-  spec.homepage      = "https://github.com/mochizukikotaro"
+  spec.homepage      = "https://github.com/mochizukikotaro/sql_formatter"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'

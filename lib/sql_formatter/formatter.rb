@@ -11,7 +11,8 @@ module SqlFormatter
       'from',
       'where',
       'group by',
-      'order by'
+      'order by',
+      'limit'
     ]
     BOUNDARY = %w( , ; : ( ) . = < > + - * / ! ~ % | & # )
 
